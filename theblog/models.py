@@ -12,13 +12,25 @@ class Post(models.Model):
     body=models.TextField()
     image = models.ImageField(upload_to='blog_images/', blank=True, null=True)
     date=models.DateTimeField(default=timezone.now)
+    likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
     
     def __str__(self):
         return self.title + '|' + str(self.author)
+    
     @property
     def title_tag(self):
         return self.title + " | " + self.title_blog
     def get_absolute_url(self):
-        return reverse('article_detail', args=(str(self.id)))
-        # return reverse('home')
-# Create your models here.
+        return reverse('article_detail', args=(self.id,))
+    
+    def total_likes(self):
+        return self.likes.count()
+    
+class Comment(models.Model):
+    post= models.ForeignKey(Post, related_name='comments', on_delete=models.CASCADE)
+    user=models.ForeignKey(User, on_delete=models.CASCADE)
+    body = models.TextField()
+    date=models.DateTimeField(default=timezone.now)
+    def __str__(self):
+        return f"Comment by {self.user.username} on {self.post.title}"
+      
