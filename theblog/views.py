@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .forms import CommentForm
 from django.db.models import Q
+from .repositories import PostRepository
 
 class SearchResultsView(ListView):
     model = Post
@@ -25,9 +26,18 @@ class HomeView(ListView):
     ordering = ['-date']
 
     def get_queryset(self):
-        qs = list(Post.objects.all())
-        random.shuffle(qs)
-        return qs
+        # Query optimization
+        qs = Post.objects.select_related('author').prefetch_related('likes', 'comments').all()
+        # Shuffle posts randomly
+        qs = PostRepository.get_posts_with_author_and_likes()
+        return list(qs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from .models import Notification
+        context['notifications'] = Notification.objects.all().order_by('-created_at')[:5]
+        return context
+
     
 class ArticleDetailView(DetailView):
     model = Post
@@ -80,25 +90,3 @@ def like_post(request, pk):
 
     return redirect('article_detail', pk=pk)
     
-
-#from django.shortcuts import render, get_object_or_404
-#from django.views.generic import ListView, DetailView, CreateView
-#from .models import Post
-from .forms import PostForm
-#def home(request):
-    #return render(request, 'home.html')
-
-#class HomeView(ListView):
-    #model=Post
-    #template_name= 'home.html'
-    #context_object_name='posts'
-    #ordering= ['-date']
-#class ArticleDetailView (DetailView):
-    #model=Post
-    #template_name='article_detail.html'
-#class AddPostView(CreateView):
-    #model=Post
-    #form_class=PostForm
-    #template_name='add_post.html'
-    # fields= '__all__'
-    # fields= ('title', 'body')

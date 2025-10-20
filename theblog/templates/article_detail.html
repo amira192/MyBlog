@@ -24,7 +24,7 @@
 <br/>
 <a href="{% url 'home' %}" class="btn btn-success">Back</a>
 
-<form action="{% url 'like-post' object.pk %}" method="POST">
+<form action="{% url 'like_post' object.pk %}" method="POST">
   {% csrf_token %}
   {% if user in object.likes.all %}
     <button type="submit">💔 Unlike</button>

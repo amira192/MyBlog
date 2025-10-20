@@ -3,6 +3,14 @@
 {% block content %}
 <h1>Blog Posts</h1>
 
+<form method="GET" class="mb-3">
+  <label for="sort" class="form-label">Sort posts by:</label>
+  <select name="sort" id="sort" class="form-select" onchange="this.form.submit()">
+    <option value="date" {% if request.GET.sort == 'date' %}selected{% endif %}>Date</option>
+    <option value="likes" {% if request.GET.sort == 'likes' %}selected{% endif %}>Likes</option>
+  </select>
+</form>
+
 <style>
   .posts-container {
     column-count: 3;
@@ -63,5 +71,15 @@
     <p>No blog posts found.</p>
   {% endfor %}
 </div>
+
+{% for note in notifications %}
+  <div class="alert alert-info notification">{{ note.message }}</div>
+{% endfor %}
+
+<script>
+  setTimeout(() => {
+    document.querySelectorAll('.notification').forEach(el => el.remove());
+  }, 5000); 
+</script>
 
 {% endblock %}
