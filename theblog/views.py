@@ -1,4 +1,5 @@
 import random
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from .models import Post
 from .forms import PostForm
@@ -6,7 +7,7 @@ from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .forms import CommentForm
-from django.db.models import Q
+from django.db.models import Q, Count
 from .repositories import PostRepository
 
 class SearchResultsView(ListView):
@@ -15,10 +16,22 @@ class SearchResultsView(ListView):
     context_object_name = 'posts'
 
     def get_queryset(self):
-        query = self.request.GET.get('q')
-        return Post.objects.filter(
+        query = self.request.GET.get('q', '')  
+        sort = self.request.GET.get('sort', 'date')  
+
+       
+        qs = Post.objects.filter(
             Q(title__icontains=query) | Q(body__icontains=query)
         )
+
+        
+        if sort == 'likes':
+            qs = qs.annotate(like_count=Count('likes')).order_by('-like_count', '-date')
+        else:
+            qs = qs.order_by('-date')
+
+        return qs
+    
 class HomeView(ListView):
     model = Post
     template_name = 'home.html'
@@ -64,20 +77,23 @@ class ArticleDetailView(DetailView):
             comment.user = request.user
             comment.save()
             return redirect('article_detail', pk=self.object.pk)
-class AddPostView(CreateView):
+class AddPostView(LoginRequiredMixin, CreateView):
     model = Post
     form_class = PostForm
     template_name = 'add_post.html'
+    login_url = 'login'
 
-class UpdatePostView(UpdateView):
+class UpdatePostView(LoginRequiredMixin, UpdateView):
     model = Post
     template_name = 'update_post.html'
     fields=['title','body']
+    login_url = 'login'
 
-class DeletePostView(DeleteView):
+class DeletePostView(LoginRequiredMixin, DeleteView):
     model = Post
     template_name = 'delete_post.html'
     success_url= reverse_lazy('home')
+    login_url = 'login'
 
 @login_required
 def like_post(request, pk):
